@@ -56,16 +56,15 @@ var BasicQuesAnsArray = [
 ];
 
 var ClozeQuesAnsArray = [
-    {text : "{{c1::Amerigo Vespucci}} named America"},
-    {text : "{{c1::George Washington}} was first president of USA"},
-    {text : "{{c1::1783}} the American revolution ended"}
+    {text : "{Amerigo Vespucci} named America"},
+    {text : "{George Washington} was first president of USA"},
+    {text : "{1783} the American revolution ended"}
 ];
 
 var inquirer = require("inquirer");
 
 var playBasicGame = function() {
     var i = Math.floor(Math.random() * BasicQuesAnsArray.length);
-    console.log("i=" + i);
     var object = BasicQuesAnsArray[i];
     console.log("Ques " + i + " :" + object.front);
     inquirer.prompt([
@@ -75,9 +74,7 @@ var playBasicGame = function() {
             name: "flipCard"
         }
     ]).then(function (answer) {
-        console.log("You chose " + answer.flipCard);
         if (true === answer.flipCard) {
-            console.log("You choose flip!!");
             console.log("Ans " + i + " :" + object.back);
             inquirer.prompt([
                 {
@@ -87,7 +84,6 @@ var playBasicGame = function() {
                 }
             ]).then(function (answer) {
                 if (true === answer.nextCard) {
-                    console.log("Go to next card");
                     playBasicGame();
                 } else {
                     console.log("Exit game");
@@ -95,7 +91,6 @@ var playBasicGame = function() {
                 }
             });
         } else {
-            console.log("You choose don't flip!!");
             playBasicGame();
         }
     });   
@@ -114,19 +109,30 @@ var playClozeGame = function() {
             });
             
     var i = Math.floor(Math.random() * ClozeQuesAnsArray.length);
-    console.log("i=" + i);
     var object = ClozeQuesAnsArray[i];
-    console.log("Ques " + i + " :" + object.text);
+    //Replace with dashes
+    var regExp = /\{([^)]+)\}/;
+    var matches = regExp.exec(object.text);
+    var newText = matches[1].substr(0, matches[1].length);
+    var blanks="";
+    for (var i=0; i < matches[1].length; i++){
+        blanks += '-';
+    }
+    var newDisplay = object.text.replace(newText, blanks);
+    
+    console.log("Ques " + i + " :" + newDisplay);
     inquirer.prompt([
         {
             type: "name",
-            message: "Fill in the blank?",
+            message: "Fill in the blank",
             name: "fillBlank"
         }
     ]).then(function (answer) {
-        console.log("You chose " + answer.fillBlank);
-        if (answer.text.c1 === answer.fillBlank) {
+        if (newText === answer.fillBlank) {
             console.log("You choose correct ans!!");
+              }else{
+            console.log("You choose incorrect ans!!");
+              }
             console.log("Ans " + i + " :" + answer.text.c1);
             inquirer.prompt([
                 {
@@ -134,8 +140,8 @@ var playClozeGame = function() {
                     message: "Next card?",
                     name: "nextCard"
                 }
-            ]).then(function (answer) {
-                if (true === answer.nextCard) {
+            ]).then(function (res) {
+                if (true === res.nextCard) {
                     console.log("Go to next card");
                     playClozeGame();
                 } else {
@@ -143,12 +149,10 @@ var playClozeGame = function() {
                     return;
                 }
             });
-        }
     });   
 }
 
 var playGame = function () {
-    console.log("Here!!");
  for (var i = 0; i < BasicQuesAnsArray.length; i++) {
     var object = BasicQuesAnsArray[i];
     BasicFlashcard(object.front, object.cloze);
@@ -180,7 +184,6 @@ var playGame = function () {
           console.log("ClozeFlashCard");
           playClozeGame();
       }
-      console.log("END");
   });
 }
 
