@@ -28,20 +28,20 @@
 var fs = require("fs");
 
 function fileWrite(err) {
-if(err) {
-    return console.log(err);
-}else {
-    //console.log("flash.txt updated");
-}
+    if (err) {
+        return console.log(err);
+    } else {
+        //console.log("flash.txt updated");
+    }
 }
 
-var BasicFlashcard = function(front, back) {
-    fs.appendFile("flash.txt", "basic:" + front + "," + back, fileWrite);
+var BasicFlashcard = function (front, back) {
+    fs.appendFile("flash.txt", "basic:" + front + "," + back+"\n", fileWrite);
 }
 
 //Create a `ClozeFlashard` constructor. It should accept `text` and `cloze` arguments.
-var ClozeFlashcard = function(text) {
-    fs.appendFile("flash.txt", "text:" + text, fileWrite);
+var ClozeFlashcard = function (text) {
+    fs.appendFile("flash.txt", "cloze:" + text+"\n", fileWrite);
 }
 
 // `ClozeFlashcard` should have a method that returns *only* the cloze-deleted portion 
@@ -50,20 +50,37 @@ var ClozeFlashcard = function(text) {
 // but you must store at least one property, and equip cloze-deleted flashcards with 
 // at least one additional method.
 var BasicQuesAnsArray = [
-    {front : "Who named America", back : "Amerigo Vespucci"},
-    {front : "Who was first president of USA", back : "George Washington"},
-    {front : "When year did the American revolution end", back : "1783"}
+    { front: "Who named America", back: "Amerigo Vespucci" },
+    { front: "Who was first president of USA", back: "George Washington" },
+    { front: "When year did the American revolution end", back: "1783" }
 ];
 
 var ClozeQuesAnsArray = [
-    {text : "{Amerigo Vespucci} named America"},
-    {text : "{George Washington} was first president of USA"},
-    {text : "{1783} the American revolution ended"}
+    { text: "{Amerigo Vespucci} named America" },
+    { text: "{George Washington} was first president of USA" },
+    { text: "{1783} the American revolution ended" }
 ];
 
 var inquirer = require("inquirer");
 
-var playBasicGame = function() {
+var nextCard = function (gameCallback) {
+    inquirer.prompt([
+        {
+            type: "confirm",
+            message: "Next card?",
+            name: "nextCard"
+        }
+    ]).then(function (answer) {
+        if (true === answer.nextCard) {
+            gameCallback();
+        } else {
+            console.log("Exit game");
+            return;
+        }
+    });
+}
+
+var playBasicGame = function () {
     var i = Math.floor(Math.random() * BasicQuesAnsArray.length);
     var object = BasicQuesAnsArray[i];
     console.log("Ques " + i + " :" + object.front);
@@ -75,117 +92,78 @@ var playBasicGame = function() {
         }
     ]).then(function (answer) {
         if (true === answer.flipCard) {
-            console.log("Ans " + i + " :" + object.back);
-            inquirer.prompt([
-                {
-                    type: "confirm",
-                    message: "Next card?",
-                    name: "nextCard"
-                }
-            ]).then(function (answer) {
-                if (true === answer.nextCard) {
-                    playBasicGame();
-                } else {
-                    console.log("Exit game");
-                    return;
-                }
-            });
+            console.log("Answer :" + object.back);
+            nextCard(playBasicGame);
         } else {
             playBasicGame();
         }
-    });   
+    });
 }
 
-var playClozeGame = function() {
- inquirer.prompt([
-                {
-                    type: "input",
-                    message: "Fill the blank?",
-                    name: "title"
-                }
-            ]).then(function (answers) {
-                console.data("You chose " + answers.title);
 
-            });
-            
+var playClozeGame = function () {
     var i = Math.floor(Math.random() * ClozeQuesAnsArray.length);
     var object = ClozeQuesAnsArray[i];
     //Replace with dashes
     var regExp = /\{([^)]+)\}/;
     var matches = regExp.exec(object.text);
     var newText = matches[1].substr(0, matches[1].length);
-    var blanks="";
-    for (var i=0; i < matches[1].length; i++){
+    var blanks = "";
+    for (var i = 0; i < matches[1].length; i++) {
         blanks += '-';
     }
     var newDisplay = object.text.replace(newText, blanks);
-    
+
     console.log("Ques " + i + " :" + newDisplay);
     inquirer.prompt([
         {
             type: "name",
-            message: "Fill in the blank",
-            name: "fillBlank"
+            message: "Fill in the blank(press enter to continue)",
+            name: "fillBlank",
+            default:newText
         }
     ]).then(function (answer) {
-        if (newText === answer.fillBlank) {
+        if (newText == answer.fillBlank) {
             console.log("You choose correct ans!!");
-              }else{
+        } else {
             console.log("You choose incorrect ans!!");
-              }
-            console.log("Ans " + i + " :" + answer.text.c1);
-            inquirer.prompt([
-                {
-                    type: "confirm",
-                    message: "Next card?",
-                    name: "nextCard"
-                }
-            ]).then(function (res) {
-                if (true === res.nextCard) {
-                    console.log("Go to next card");
-                    playClozeGame();
-                } else {
-                    console.log("Exit game");
-                    return;
-                }
-            });
-    });   
+        }
+        console.log("Answer :" + newText);
+        nextCard(playClozeGame);
+    });
 }
 
 var playGame = function () {
- for (var i = 0; i < BasicQuesAnsArray.length; i++) {
-    var object = BasicQuesAnsArray[i];
-    BasicFlashcard(object.front, object.cloze);
- }
+    for (var i = 0; i < BasicQuesAnsArray.length; i++) {
+        var object = BasicQuesAnsArray[i];
+        BasicFlashcard(object.front, object.back);
+    }
 
-  for (var i = 0; i < ClozeQuesAnsArray.length; i++) {
-    var object = ClozeQuesAnsArray[i];
-    ClozeFlashcard(object.text);
- }
+    for (var i = 0; i < ClozeQuesAnsArray.length; i++) {
+        var object = ClozeQuesAnsArray[i];
+        ClozeFlashcard(object.text);
+    }
 
+    inquirer.prompt([
+        {
+            type: "list",
+            message: "Would you like to play ?",
+            choices: ["BasicFlashCard", "ClozeFlashCard"],
+            name: "pick"
+        }
+    ]).then(function (resp) {
 
+        console.log(resp.pick);
 
-  inquirer.prompt([
-      {
-          type: "list",
-          message: "Would you like to play ?",
-          choices: ["BasicFlashCard", "ClozeFlashCard", "exit"],
-          name: "pick"
-      }
-  ]).then(function (resp) {
-
-      console.log(resp.pick);
-
-      if (resp.pick == "BasicFlashCard") {
-          console.log("Selected BasicFlashCard");
-          playBasicGame();
-      }
-      else {
-          console.log("ClozeFlashCard");
-          playClozeGame();
-      }
-  });
+        if (resp.pick == "BasicFlashCard") {
+            console.log("Selected BasicFlashCard");
+            playBasicGame();
+        }
+        else {
+            console.log("ClozeFlashCard");
+            playClozeGame();
+        }
+    });
 }
-
 
 playGame();
